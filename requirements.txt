@@ -1,0 +1,11 @@
+Flask
+Flask-PyMongo
+Flask-Login
+Werkzeug
+pymongo
+cryptography
+matplotlib
+reportlab
+openpyxl
+python-pptx
+pyspark

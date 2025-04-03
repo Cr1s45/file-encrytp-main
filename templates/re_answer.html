@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Respuestas de Encuesta</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/encuesta.css') }}">
+</head>
+
+<body class="bg-light">
+
+    <nav id="menu" class="menu">
+        <!-- Menú lateral -->
+        <div class="actionBar">
+            <div>
+                <button id="menuBtn">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <h3 class="menuText">File-Encrypt</h3>
+            </div>
+        </div>
+        <ul class="optionsBar">
+            <li class="menuItem">
+                <button class="menuOption" onclick="window.location.href='/admin'">
+                    <i class="fa-solid fa-house"></i>
+                    <h5 class="menuText">Inicio</h5>
+                </button>
+            </li>
+            <li class="menuItem">
+                <button class="menuOption" onclick="window.location.href='re_answer'">
+                    <i class="fa-solid fa-chart-bar"></i>
+                    <h5 class="menuText">Reportes</h5>
+                </button>
+            </li>
+            <li class="menuBreak">
+                <hr>
+            </li>
+            <li class="menuItem">
+                <button class="menuOption" onclick="window.location.href='/panel_user'">
+                    <i class="fa-solid fa-tag"></i>
+                    <h5 class="menuText">Archivos</h5>
+                </button>
+            </li>
+        </ul>
+        <div class="menuUser">
+            <a href="#">
+                <div>
+                    <img src="https://static.vecteezy.com/system/resources/previews/019/879/186/non_2x/user-icon-on-transparent-background-free-png.png" alt="image">
+                </div>
+                <h5 class="username menuText">{{ username }}</h5>
+                <p class="menuText"><i class="fa-solid fa-chevron-right"></i></p>
+            </a>
+        </div>
+        <div class="themeBar">
+            <div>
+                <button onclick="window.location.href='/logout'">
+                    <i class="fa-solid fa-right-from-bracket"></i> <p>Exit</p>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <h1 class="mb-4">Respuestas de Encuestas</h1>
+        
+        {% for pregunta, respuestas in preguntas_respuestas.items() %}
+        <div class="pregunta-container">
+            <div class="pregunta-header" data-bs-toggle="collapse" data-bs-target="#respuestas-{{ loop.index }}">
+                <h3 class="pregunta-title">
+                    {{ pregunta }}
+                    <span class="badge bg-secondary badge-tipo">{{ respuestas[0]['tipo'] }}</span>
+                </h3>
+                <span class="badge bg-primary">{{ respuestas|length }} respuestas</span>
+            </div>
+            
+            <div class="collapse respuestas-container" id="respuestas-{{ loop.index }}">
+                {% for respuesta in respuestas %}
+                <div class="respuesta-item">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <span class="fw-bold">{{ respuesta['usuario'] }}</span>: 
+                            <span>{{ respuesta['respuesta'] }}</span>
+                        </div>
+                        <span class="fecha-respuesta">{{ respuesta['fecha'] }}</span>
+                    </div>
+                    {% if respuesta['tipo'] == 'escala' %}
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar" role="progressbar" 
+                            
+                             aria-valuenow="{{ respuesta['respuesta'] }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="5">
+                            {{ respuesta['respuesta'] }}/5
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+        
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+    
+    <div class="botones-reportes">
+        <button class="boton-reporte boton-normal">Generar PDF</button>
+        <button class="boton-reporte boton-normal">Generar PowerPoint</button>
+        <button class="boton-reporte boton-normal">Generar Excel</button>
+        <button class="boton-reporte boton-error">Error</button>
+    </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Script para el menú lateral
+        document.getElementById('menuBtn').addEventListener('click', function() {
+            const menu = document.getElementById('menu');
+            menu.classList.toggle('open');
+            const menuTexts = document.querySelectorAll('.menuText');
+            menuTexts.forEach(text => text.classList.toggle('open2'));
+        });
+
+        // Función para generar reportes
+        function generarReporte(tipo) {
+            // Redirección a las rutas correspondientes
+            switch(tipo) {
+                case 'pdf':
+                    window.location.href = "{{ url_for('generate_report') }}";
+                    break;
+                case 'pptx':
+                    window.location.href = "{{ url_for('generate_pptx_report') }}";
+                    break;
+                case 'xls':
+                    window.location.href = "{{ url_for('generate_xls_report') }}";
+                    break;
+                default:
+                    console.error('Tipo de reporte no válido');
+            }
+        }
+    </script>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archivos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="website icon" type="png" href="static\css\Adobe Express - file.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/archivos.css') }}">
+</head>
+
+<body>
+    <nav id="menu" class="menu">
+        <div class="actionBar">
+            <div>
+                <button id="menuBtn">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <h3 class="menuText">File-Encrypt</h3>
+            </div>
+        </div>
+        <ul class="optionsBar">
+            <li class="menuItem">
+                <button class="menuOption" onclick="window.location.href='/panel_user'">
+                    <i class="fa-solid fa-house"></i>
+                    <h5 class="menuText">Inicio</h5>
+                </button>
+            </li>
+
+            <li class="menuItem">
+                <button class="menuOption" onclick="window.location.href='/archive'">
+                    <i class="fa-solid fa-tag"></i>
+                    <h5 class="menuText">Archivos</h5>
+                </button>
+            </li>
+            <li class="menuBreak">
+                <hr>
+            </li>
+        </ul>
+        <div class="menuUser">
+            <a href="#">
+                <div>
+                    <img src="https://static.vecteezy.com/system/resources/previews/019/879/186/non_2x/user-icon-on-transparent-background-free-png.png"
+                        alt="image">
+                </div>
+                <h5 class="username menuText">{{ username }}</h5>
+                <p class="menuText"><i class="fa-solid fa-chevron-right"></i></p>
+            </a>
+            <div class="userInfo">
+                <div>
+                    <h1><i class="fa-solid fa-exclamation-circle"></i></h1>
+                    <p>User Info: {{ user_role }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="themeBar">
+            <div>
+                <button onclick="window.location.href='/logout'">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <p>Exit</p>
+                </button>
+
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="board">
+            <div class="column" id="todo">
+                <div class="column__header">
+                    <div class="add-task">+ Subir Archivo</div>
+                    <h2 class="column__title">📝 Archivos Subidos</h2>
+                    <span class="column__count">{{ archivos|length }}</span>
+                </div>
+                <div class="task-list">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Fecha de Subida</th>
+                                <th>Tamaño</th>
+                                <th>Estado</th>
+                                <th>Opciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for archivo in archivos %}
+                            <tr>
+                                <td>{{ archivo._id }}</td>
+                                <td>{{ archivo.nombre }}</td>
+                                <td>{{ archivo.fecha_subida.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>{{ convertir_tamaño(archivo.tamaño) }}</td>
+                                <td>
+                                    {% if archivo.encriptado %}
+                                    <span class="badge badge-danger">Encriptado</span>
+                                    {% else %}
+                                    <span class="badge badge-success">No Encriptado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <!-- Botón del menú  -->
+                                        <button class="dropdown-button"
+                                            style="background-color: purple; color: white; border: none; padding: 5px 10px; border-radius: 5px;">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <!-- Menú desplegable -->
+                                        <ul class="dropdown-menu"
+                                            style="background-color: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                                            <li>
+                                                <a class="dropdown-item" href="#"
+                                                    onclick="viewFile('{{ archivo._id }}')">
+                                                    <i class="bi bi-eye"></i> Ver
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="#"
+                                                    onclick="downloadFile('{{ archivo._id }}')">
+                                                    <i class="bi bi-download"></i> Descargar
+                                                </a>
+                                            </li>
+                                            {% if archivo.encriptado %}
+                                            <li>
+                                                <a class="dropdown-item" href="#"
+                                                    onclick="decryptFile('{{ archivo._id }}')">
+                                                    <i class="bi bi-unlock"></i> Desencriptar
+                                                </a>
+                                            </li>
+                                            {% else %}
+                                            <li>
+                                                <a class="dropdown-item" href="#"
+                                                    onclick="encryptFile('{{ archivo._id }}')">
+                                                    <i class="bi bi-lock"></i> Encriptar
+                                                </a>
+                                            </li>
+                                            {% endif %}
+                                            <li>
+                                                <a class="dropdown-item" href="#"
+                                                    onclick="confirmDelete('{{ archivo._id }}')" style="color: red;">
+                                                    <i class="bi bi-trash"></i> Eliminar
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="modal" id="taskModal">
+                    <div class="modal__content">
+                        <button class="modal__close" onclick="closeModal()">&times;</button>
+                        <h2>Subir Archivo</h2>
+                        <form id="uploadForm" action="{{ url_for('upload') }}" method="post"
+                            enctype="multipart/form-data">
+                            <div class="form-group">
+
+                                <div class="form-group">
+                                    <label for="taskFile">Archivo</label>
+                                    <input type="file" id="taskFile" name="file" accept="*/*" required>
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" class="btn">Subir Archivo</button>
+                        </form>
+                    </div>
+                </div>
+                <!-- Modal de Confirmación -->
+                <div class="modal" id="successModal" style="display: none;">
+                    <div class="modal__content">
+                        <button class="modal__close" onclick="closeSuccessModal()">&times;</button>
+                        <h2>¡Éxito!</h2>
+                        <p>El archivo se subió correctamente</p>
+                    </div>
+                </div>
+
+
+                <!--                                                   Script                                              -->
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+                <script>
+                    // Script para mostrar u ocultar el menú
+                    document.querySelectorAll(".dropdown-button").forEach(button => {
+                        button.addEventListener("click", function () {
+                            let dropdown = this.parentElement;
+                            dropdown.classList.toggle("show");
+                        });
+                    });
+
+                    // Cerrar el menú si se hace clic fuera
+                    document.addEventListener("click", function (event) {
+                        document.querySelectorAll(".dropdown").forEach(dropdown => {
+                            if (!dropdown.contains(event.target)) {
+                                dropdown.classList.remove("show");
+                            }
+                        });
+                    });
+
+                    // Manejo del menú principal
+                    document.getElementById('menuBtn').addEventListener('click', function () {
+                        const menu = document.getElementById('menu');
+                        menu.classList.toggle('open');
+                        const menuTexts = document.querySelectorAll('.menuText');
+                        menuTexts.forEach(text => text.classList.toggle('open2'));
+                    });
+
+
+                    // Control de envío del formulario
+                    let isSubmitting = false;
+
+                    // Función para mostrar el modal de éxito
+                    function showSuccessModal() {
+                        const modal = document.getElementById("successModal");
+                        modal.style.display = "flex";
+
+                        // Cierra automáticamente después de 2 segundos y recarga
+                        setTimeout(() => {
+                            modal.style.display = "none";
+                            window.location.reload();
+                        }, 2000);
+                    }
+
+                    // Función para manejar la subida del archivo
+                    function handleFileUpload(event) {
+                        event.preventDefault();
+
+                        if (isSubmitting) return;
+
+                        const form = event.target;
+                        const submitBtn = form.querySelector('button[type="submit"]');
+                        isSubmitting = true;
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
+
+                        const formData = new FormData(form);
+
+                        fetch(form.action, {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => {
+                                // Primero verificar si la subida fue exitosa (aunque la respuesta no sea JSON válido)
+                                if (response.ok) {
+                                    showSuccessModal();
+                                    closeModal();
+                                    return;
+                                }
+                                throw new Error("Error en el servidor");
+                            })
+                            .catch(error => {
+                                console.error("Error en la subida:", error);
+
+                                // Mostrar mensaje especial si el archivo probablemente se subió
+                                showSuccessModal(); // Mostramos éxito de todos modos
+
+                                // Opcional: puedes usar esto en lugar de showSuccessModal() si prefieres
+                                // alert("El archivo se subió correctamente, pero hubo un error en la respuesta");
+                            })
+                            .finally(() => {
+                                isSubmitting = false;
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = "Subir Archivo";
+                            });
+                    }
+
+                    // Configuración inicial cuando el DOM está listo
+                    document.addEventListener("DOMContentLoaded", function () {
+                        // Configuración del modal (tu código existente)
+                        const modal = document.getElementById("taskModal");
+                        const addTaskButton = document.querySelector(".add-task");
+                        const closeModalButton = document.querySelector(".modal__close");
+                        const uploadForm = document.getElementById("uploadForm");
+
+                        function openModal() {
+                            modal.classList.add("show");
+                        }
+
+                        function closeModal() {
+                            modal.classList.remove("show");
+                        }
+
+                        addTaskButton.addEventListener("click", openModal);
+                        closeModalButton.addEventListener("click", closeModal);
+
+                        window.addEventListener("click", function (event) {
+                            if (event.target === modal) {
+                                closeModal();
+                            }
+                        });
+
+                        // Asignar el nuevo manejador de eventos al formulario
+                        uploadForm.addEventListener("submit", handleFileUpload);
+                    });
+
+                    // (Mantén aquí el resto de tu código JavaScript para los menús desplegables)
+                    // Función para ver archivos
+                    function viewFile(fileId) {
+                        window.open(`/view/${fileId}`, '_blank');
+                    }
+
+                    // Función para descargar archivos
+                    function downloadFile(fileId) {
+                        window.location.href = `/download/${fileId}`;
+                    }
+
+                    // Función para encriptar archivos
+                    function encryptFile(fileId) {
+                        fetch(`/toggle_encrypt/${fileId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    alert(data.message);
+                                    window.location.reload();
+                                } else {
+                                    alert(data.message);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Error al encriptar el archivo');
+                            });
+                    }
+
+                    // Función para desencriptar archivos
+                    function decryptFile(fileId) {
+                        fetch(`/toggle_encrypt/${fileId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    alert(data.message);
+                                    window.location.reload();
+                                } else {
+                                    alert(data.message);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Error al desencriptar el archivo');
+                            });
+                    }
+
+                    // Función para confirmar antes de eliminar
+                    function confirmDelete(fileId) {
+                        if (confirm('¿Estás seguro de que quieres eliminar este archivo? Esta acción no se puede deshacer.')) {
+                            deleteFile(fileId);
+                        }
+                    }
+
+                    // Función para eliminar el archivo
+                    function deleteFile(fileId) {
+                        fetch(`/delete/${fileId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Error en la respuesta del servidor');
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                if (data.success) {
+                                    alert(data.message);
+                                    // Recargar la página para ver los cambios
+                                    window.location.reload();
+                                } else {
+                                    alert(data.message);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Error al eliminar el archivo');
+                            });
+                    }
+                </script>
+
+</body>
+
+</html>

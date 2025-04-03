@@ -1,0 +1,131 @@
+/* Estilos generales */
+body {
+    margin: 0;
+    font-family: 'Open Sans', sans-serif;
+    color: #333333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-image: linear-gradient(135deg, #081B54 100%);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-image: url("https://c.wallhere.com/photos/74/d4/1920x1080_px_abstract-567495.jpg!s1");
+}
+
+
+
+#menu-icon {
+    display: none;
+}
+
+
+.box-form {
+    display: flex;
+    width: 80%;
+    max-width: 1200px;
+    background: #FFFFFF;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 20px 6px rgba(9, 11, 111, 0.52);
+}
+
+.left {
+    flex: 1;
+    background-image: url("");
+    background-size: cover;
+    background-position: center;
+    color: #FFFFFF;
+    position: relative;
+}
+
+.left .overlay {
+    padding: 40px;
+    width: 100%;
+    height: 100%;
+    background: rgb(77, 86, 254);
+    box-sizing: border-box;
+}
+
+.left h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+.left p {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.right {
+    flex: 1;
+    padding: 40px;
+    text-align: center;
+}
+
+.right h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #eca6ff;
+}
+
+.input-box {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.input-box input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    border-bottom: 2px solid #B0B3B9;
+    outline: none;
+}
+
+.input-box i {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #B0B3B9;
+}
+
+.btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    color: #ffffff;
+    background-image: linear-gradient(135deg, #88a0f9 10%, #cbc0ff 90%);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0px 4px 20px 0px rgba(40, 40, 198, 0.65);
+}
+
+.register-link {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #B0B3B9;
+}
+
+.register-link a {
+    color: #3b5998;
+    text-decoration: none;
+}
+
+.register-link a:hover {
+    text-decoration: underline;
+}
+
+.back-button {
+    display: inline-block;
+    margin-top: 20px;
+    color: #3b5998;
+    text-decoration: none;
+}
+
+.back-button:hover {
+    text-decoration: underline;
+}

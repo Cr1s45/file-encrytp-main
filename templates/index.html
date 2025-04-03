@@ -1,0 +1,226 @@
+<!--Lo unico que se modifcaria es el contacto y soporte para que lo pase a la base de datos si es que esta registrado-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>OnResolute</title>
+        <link rel="website icon" type="png" href="static\css\Adobe Express - file.png">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+<body>
+    <header>
+        <a href="#" class="logo"><img src="static\css\Adobe Express - file.png" alt="OnResolute Logo">OnResolute</a>
+        <div class='bx bx-menu' id="menu-icon"></div>
+        <ul class="navbar">
+            <li><a href="#about">Informacion</a></li>
+            <li><a href="#funtion">Cómo Funciona</a></li>
+            <li><a href="#customer">¿Para Quién Es?</a></li>
+            <li><a href="#contact">Contacto y Soporte</a></li>
+            {% if current_user.is_authenticated %}
+
+<!--Esta bien si, pero cuando el admin se va a index debe de tener tres opciones, panel de usuario, reportes, cerrar sesion pero si le quieren agregar adelante-->
+                <li class="user-menu">
+                    <a href="#" class="user-icon"><i class='bx bxs-user'></i></a>
+                    <ul class="dropdown">
+                        <li><a href="{{ url_for('panel_user') }}">Panel de Usuario</a></li>
+                        <li><a href="{{ url_for('logout') }}">Cerrar Sesión</a></li>
+                    </ul>
+                </li>
+            {% else %}
+                <li><a href="{{ url_for('login') }}">File-Encrypt</a></li>
+            {% endif %}
+        </ul>
+    </header>
+
+    <!-- Menu Principal de la pagina de index (toda la informacion, el contacto y soporte no funcionan a menos que lo quieran mejorar)-->
+    <section class="home" id="home">
+        <div class="home-text">
+            <span>Protege tus archivos con seguridad avanzada</span>
+            <h1>On<br>Resolute!</h1>
+            <p>Nuestra plataforma te permite encriptar y almacenar archivos en la nube de manera fácil y segura. Con una
+                interfaz intuitiva y un cifrado robusto, garantizamos la protección de tu información personal y
+                empresarial.</p>
+            <a href="login" class="btn">File-Encrypt</a>
+        </div>
+        <div class="home-img">
+            <img src="https://cdni.iconscout.com/illustration/premium/thumb/sistema-de-administracion-de-archivos-3678733-3135998.png?f=webp"
+                alt="OnResolute image">
+        </div>
+    </section>
+    <section class="about" id="about">
+        <h1>¿Por qué elegirnos?</h1>
+        <div class="about-container">
+            <div class="about-box">
+                <div class="box-img">
+                    <img src="https://cdn-icons-png.flaticon.com/512/5387/5387138.png" alt="about image">
+                </div>
+                <h2>Seguridad de nivel avanzado </h2>
+                <h3>Cifrado potente antes de subir los archivos.</h3>
+            </div>
+            <div class="about-box">
+                <div class="box-img">
+                    <img src="https://cdn-icons-png.flaticon.com/512/6549/6549554.png" alt="about image">
+                </div>
+                <h2>Fácil de usar</h2>
+                <h3>Encripta y descifra archivos con un solo clic.</h3>
+            </div>
+            <div class="about-box">
+                <div class="box-img">
+                    <img src="https://cdn-icons-png.flaticon.com/512/7811/7811590.png" alt="about image">
+                </div>
+                <h2>Compatible con la nube</h2>
+                <h3>Funciona con los principales servicios de almacenamiento.</h3>
+            </div>
+            <div class="about-box">
+                <div class="box-img">
+                    <img src="https://cdn-icons-png.flaticon.com/512/6073/6073954.png" alt="about image">
+                </div>
+                <h2>Acceso desde cualquier lugar</h2>
+                <h3>Protege y recupera tu información cuando la necesites.</h3>
+            </div>
+        </div>
+    </section>
+    <section class="funtion" id="funtion">
+        <div class="heading">
+            <h2>Cómo Funciona</h2>
+            <p>Proteger tus archivos nunca fue tan fácil. Sigue estos simples pasos para encriptar y almacenar tu
+                información de manera segura:</p>
+        </div>
+        <div class="funtion-container">
+            <div class="funtion-box">
+                <h2>1. Sube tu archivo</h2>
+                <h3>Selecciona los archivos que deseas proteger y súbelos a nuestra plataforma de manera rápida y
+                    sencilla.<br></h3>
+            </div>
+            <div class="funtion-box">
+                <h2>2. Encripta con un solo clic </h2>
+                <h3>Aplicamos un cifrado avanzado para garantizar que solo tú tengas acceso a la información.<br><br>
+                </h3>
+            </div>
+            <div class="funtion-box">
+                <h2>3. Guarda y accede desde cualquier lugar</h2>
+                <h3>Descarga tu archivo encriptado o almacénalo en la nube con total seguridad.</h3>
+            </div>
+            <div class="funtion-box">
+                <h2> 4. Comparte con confianza</h2>
+                <h3>Si necesitas enviar el archivo a otra persona, puedes compartirlo de manera segura sin preocuparte
+                    por filtraciones.</h3>
+            </div>
+        </div>
+    </section>
+    <section class="customer" id="customer">
+        <div class="heading">
+            <h2>¿Para Quién Es?</h2>
+            <p>Nuestra plataforma es ideal para cualquier persona o entidad que necesite proteger su información de
+                manera segura y sencilla.</p>
+        </div>
+        <div class="customer-container">
+            <div class="box">
+                <img src="https://cdn-icons-png.flaticon.com/512/4557/4557750.png" alt="customer image">
+
+                <h2>Usuarios individuales </h2>
+                <p>📁 Protege tus archivos personales, como fotos, documentos y datos privados.
+                    <br>
+                    🔐 Evita accesos no autorizados con un cifrado avanzado antes de almacenarlos en la nube.
+                    <br>
+                    📲 Accede a tu información segura desde cualquier dispositivo, en cualquier momento.
+                </p>
+                <br>
+            </div>
+            <div class="box">
+                <img src="https://cdn-icons-png.freepik.com/512/10488/10488169.png" alt="customer image">
+
+                <h2>Desarrolladores</h2>
+                <p>🛠️ Integra nuestra tecnología de encriptación en tus aplicaciones para proteger los datos de tus
+                    usuarios.<br>
+                    🔒 Asegura que la información se almacene y transfiera con los más altos estándares de
+                    seguridad.<br>
+                    📌 Compatible con diversas plataformas y lenguajes de programación.</p>
+            </div>
+            <div class="box">
+                <img src="https://cdn-icons-png.flaticon.com/512/2686/2686410.png" alt="customer image">
+
+                <h2> Empresas y Profesionales</h2>
+                <p>Protege documentos sensibles como contratos, informes financieros y bases de datos.<br>
+                    📊 Evita filtraciones de información confidencial y cumple con normativas de seguridad.<br>
+                    🔄 Facilita la colaboración segura con clientes y empleados sin comprometer la privacidad.</p>
+            </div>
+        </div>
+    </section>
+    <div class="funtion-box">
+        <center>
+            <h1>Empieza ahora</h1>
+            <br>
+            <a href="login" class="btn">File-Encrypt</a>
+            <br><br><br><br>
+        </center>
+    </div>
+    <br>
+    <!--Apartado del contacto y soporte -->
+    <section class="contact" id="contact">
+        <div class="heading">
+            <h2>Contacto y Soporte</h2>
+            <p>¿Tienes preguntas o necesitas ayuda? Estamos aquí para asistirte.</p>
+        </div>
+        <div class="contact-container">
+            <div class="contact-info">
+                <h2>Contáctanos</h2>
+                <p>¿Tienes alguna pregunta o necesitas ayuda? ¡Estamos aquí para asistirte! Puedes comunicarte con
+                    nosotros a través de los siguientes medios:</p>
+                <div class="address">
+                    <i class='bx bxs-map'><span>calle de los mangos</span></i>
+                    <i class='bx bxs-phone'><span>+52 82132103</span></i>
+                    <i class='bx bxs-envelope'><span>oneresolute@gmail.com</span></i>
+                </div>
+                <div class="social">
+                    <a href="#"><i class='bx bxl-facebook'></i></a>
+                    <a href="#"><i class='bx bxl-twitter'></i></a>
+                    <a href="#"><i class='bx bxl-instagram'></i></a>
+                </div>
+            </div>
+            <div class="contact-form">
+                <form action="">
+                    <input type="text" placeholder="Nombre">
+                    <input type="email" placeholder="Email">
+                    <textarea name="" id="" cols="30" rows="10" placeholder="Escribe tu mensaje"></textarea>
+                    <input type="button" value="Enviar" class="btn">
+                </form>
+            </div>
+        </div>
+    </section>
+    <div class="copyright">
+        <p>© 2025 <span>ULTRA CODE</span> - Anel Peña Vázquez, Alexis Gutiérrez Ramos, Daniela Flores Moreno, Jazmín
+            Estrada Peña, Karina Huerta Mota, Monserrat Hernández Arzaluz, Nadia Dávila Miranda, Sofia Alvarado
+            Escalona. Todos los derechos reservados.</p>
+    </div>
+    <script>
+
+        let header = document.querySelector("header");
+        let menu = document.querySelector("#menu-icon");
+        let navbar = document.querySelector(".navbar");
+
+        window.addEventListener("scroll", () => { header.classList.toggle("active", window.scrollY > 0); });
+
+        menu.onclick = () => { navbar.classList.toggle("active"); }
+        window.onscroll = () => { navbar.classList.remove("active"); }
+        document.addEventListener('DOMContentLoaded', function() {
+        const userIcon = document.querySelector('.user-icon');
+        const dropdown = document.querySelector('.dropdown');
+
+        userIcon.addEventListener('click', function(e) {
+            e.preventDefault();
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Cerrar el menú si se hace clic fuera de él
+        document.addEventListener('click', function(e) {
+            if (!userIcon.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+    });
+    </script>
+</body>
+</html>

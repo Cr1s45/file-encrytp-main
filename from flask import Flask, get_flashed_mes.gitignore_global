@@ -1,0 +1,806 @@
+from flask import Flask, get_flashed_messages, render_template, send_file, request, redirect, url_for, send_from_directory, flash
+from flask_pymongo import PyMongo
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+import os
+from datetime import datetime
+from bson import ObjectId
+from pyspark.sql import SparkSession
+from cryptography.fernet import Fernet
+import re
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from io import BytesIO
+from pptx import Presentation
+from pptx.util import Inches
+from openpyxl import Workbook
+from openpyxl.drawing.image import Image
+from openpyxl.styles import Font
+from flask import Flask, send_file, jsonify, request, flash, redirect, url_for, abort
+from flask_pymongo import PyMongo
+from gridfs import GridFS
+from bson.objectid import ObjectId
+from io import BytesIO
+from datetime import datetime
+from werkzeug.utils import secure_filename
+from cryptography.fernet import Fernet
+import os
+
+app = Flask(__name__)
+
+# Configuración de MongoDB
+app.config["MONGO_URI"] = "mongodb://localhost:27017/file_encrypt_db"
+mongo = PyMongo(app)
+fs = GridFS(mongo.db)  # GridFS para almacenar archivos
+
+# Clave para encriptación (en producción usa una clave fija y guárdala de forma segura)
+key = Fernet.generate_key()
+cipher_suite = Fernet(key)
+# App Flask  -  secretkey
+app = Flask(__name__)
+app.secret_key = 'una_clave_secreta_muy_segura_y_unica'
+
+# Configuración de MongoDB
+app.config["MONGO_URI"] = "mongodb://localhost:27017/av_db"  # Cambia esto si usas MongoDB Atlas
+mongo = PyMongo(app)
+
+# Configuración de Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"  # Ruta a la que se redirige si el usuario no está autenticado
+login_manager.session_protection = "strong"  # Protección de sesión más segura
+app.config['REMEMBER_COOKIE_DURATION'] = 3600  # La sesión durará 1 hora
+
+# Modelo de usuario
+class User(UserMixin):
+    def __init__(self, user_id, username):
+        self.id = user_id
+        self.username = username
+
+# Cargar usuario (simulado)
+@login_manager.user_loader
+def load_user(user_id):
+    user = mongo.db.usuarios.find_one({'_id': ObjectId(user_id)})
+    if user:
+        return User(str(user['_id']), user['username'])
+    return None
+
+# Ruta para el login
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        remember = True if request.form.get('remember') else False  # Verificar si el usuario seleccionó "Recordarme"
+        
+        # Buscar usuario en MongoDB
+        user = mongo.db.usuarios.find_one({'username': username})
+        if user and check_password_hash(user['password'], password):
+            user_obj = User(user['_id'], user['username'])
+            login_user(user_obj, remember=remember)  # Usar el parámetro remember
+            flash('Inicio de sesión exitoso', 'success')
+            next_page = request.args.get('next')  # Redirección después de login
+            # Redirigir según el rol del usuario
+            if user['role'] == 'admin':
+                return redirect(next_page or url_for('admin'))
+            elif user['role'] == 'user':
+                return redirect(next_page or url_for('panel_user'))  # Redirigir a /panel_user
+            else:
+                return redirect(next_page or url_for('home'))  # Redirigir a home por defecto
+        else:
+            flash('Usuario o contraseña incorrectos', 'error')
+            return redirect(url_for('login'))
+    # Limpiar mensajes flash no relacionados
+    flashed_messages = get_flashed_messages(with_categories=True)
+    filtered_messages = [(category, message) for category, message in flashed_messages 
+                         if category in ['success', 'error']]
+    # Pasar solo los mensajes relevantes a la plantilla
+    return render_template('login.html', messages=filtered_messages)
+
+
+# Ruta para registrar nuevos usuarios
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        role = request.form.get('role', 'user')  # Por defecto el rol es 'user'
+        # Verificar si el usuario ya existe en MongoDB
+        existing_user = mongo.db.usuarios.find_one({'username': username})
+        if existing_user:
+            flash('El usuario ya existe. Por favor, inicia sesión.', 'warning')
+            return redirect(url_for('login'))
+        # Hashear la contraseña antes de guardarla
+        hashed_password = generate_password_hash(password)
+        # Insertar nuevo usuario en MongoDB
+        mongo.db.usuarios.insert_one({
+            'username': username,
+            'password': hashed_password,  # Guardar la contraseña encriptada
+            'role': role  # Agregar el rol del usuario
+        })
+       
+        return redirect(url_for('login'))
+    # Limpiar mensajes flash no relacionados
+    flashed_messages = get_flashed_messages(with_categories=True)
+    filtered_messages = [(category, message) for category, message in flashed_messages 
+                         if category in ['success', 'warning']]
+    # Pasar solo los mensajes relevantes a la plantilla
+    return render_template('register.html', messages=filtered_messages)
+
+# Proteger la ruta /admin
+@app.route('/admin')
+@login_required
+def admin():
+    if current_user.is_authenticated:
+        user = mongo.db.usuarios.find_one({'username': current_user.username})
+        if user and user['role'] == 'admin':
+            archivos = list(mongo.db.archivos.find())
+            encuestas = list(mongo.db.encuestas.find())
+            return render_template('admin.html', archivos=archivos, encuestas=encuestas, is_admin=True, convertir_tamaño=convertir_tamaño)
+        else:
+            # Limpiar mensajes flash antes de redirigir
+            get_flashed_messages()
+            flash('No tienes permisos para acceder a esta página', 'error')
+            return redirect(url_for('home'))
+    else:
+        # Limpiar mensajes flash antes de redirigir
+        get_flashed_messages()
+        return redirect(url_for('login'))
+
+
+# Ruta para formulario de encuesta
+@app.route('/survey')
+def survey():
+    return render_template('survey.html')
+
+# Ruta para ver respuestas (re_answer)
+@app.route('/respuestas')
+def re_answer():
+    # Obtener todas las encuestas desde la base de datos
+    encuestas = mongo.db.encuestas.find()
+
+    # Crear un diccionario para almacenar las respuestas por pregunta
+    preguntas_respuestas = {}
+
+    for encuesta in encuestas:
+        for pregunta in encuesta['preguntas']:
+            if pregunta['texto'] not in preguntas_respuestas:
+                preguntas_respuestas[pregunta['texto']] = []
+            respuestas = pregunta['respuesta']
+            # Añadir la respuesta a la lista correspondiente
+            preguntas_respuestas[pregunta['texto']].append(respuestas)
+
+    # Pasar las preguntas únicas y sus respuestas al template
+    return render_template('re_answer.html', preguntas_respuestas=preguntas_respuestas)
+
+# Ruta de una sola encuesta
+@app.route('/survey/<survey_id>')
+def view_survey(survey_id):
+    encuesta = mongo.db.encuestas.find_one({"_id": ObjectId(survey_id)})
+    if not encuesta:
+        flash("Encuesta no encontrada", "error")
+        return redirect(url_for('admin'))
+    return render_template('view_survey.html', encuesta=encuesta)
+
+# Ruta para envio de respuestas de encuesta
+@app.route('/submit_survey', methods=['POST'])
+def submit_survey():
+    try:
+        # Obtener las respuestas del formulario
+        calificacion_servicio = request.form.get('pregunta1')  # Escala 1-5
+        mejora = request.form.get('pregunta2')                 # Texto libre
+        tiempo_espera = request.form.get('pregunta3')           # Número (minutos)
+        recomendacion = request.form.get('pregunta4')          # Sí/No/Tal vez
+        soporte_tecnico = request.form.get('pregunta5')        # Bueno/Regular/Malo
+
+        # Validar y convertir los tipos correctamente
+        encuesta_data = {
+            'nombre': 'Encuesta de satisfacción',
+            'preguntas': [
+                {
+                    'texto': '¿Cómo calificarías nuestro servicio?',
+                    'tipo': 'escala',
+                    'respuesta': int(calificacion_servicio) if calificacion_servicio else 0
+                },
+                {
+                    'texto': '¿Qué te gustaría mejorar?',
+                    'tipo': 'abierta',
+                    'respuesta': mejora or "No especificado"
+                },
+                {
+                    'texto': '¿Cuál ha sido el tiempo de espera? (en minutos)',
+                    'tipo': 'numerico',
+                    'respuesta': int(tiempo_espera) if tiempo_espera and tiempo_espera.isdigit() else 0
+                },
+                {
+                    'texto': '¿Recomendarías nuestro servicio?',
+                    'tipo': 'opcion',
+                    'respuesta': recomendacion or "No especificado"
+                },
+                {
+                    'texto': '¿Cómo calificarías el soporte técnico?',
+                    'tipo': 'opcion',
+                    'respuesta': soporte_tecnico or "No especificado"
+                }
+            ],
+            'fecha_creacion': datetime.now()
+        }
+
+        # Insertar en MongoDB
+        mongo.db.encuestas.insert_one(encuesta_data)
+        flash('Encuesta enviada correctamente', 'success')
+        return redirect(url_for('panel_user'))
+
+    except Exception as e:
+        print(f"Error al procesar encuesta: {str(e)}")
+        flash('Error al enviar la encuesta', 'error')
+        return redirect(url_for('survey'))
+
+
+
+# Ruta para el panel de usuario
+@app.route('/panel_user')
+@login_required
+def panel_user():
+    if current_user.is_authenticated:
+        user = mongo.db.usuarios.find_one({'username': current_user.username})
+        if user:
+            # Obtener los archivos del usuario actual
+            archivos = list(mongo.db.archivos.find({'usuario': current_user.username}))
+            
+            # Calcular estadísticas
+            total_archivos = len(archivos)
+            total_encriptados = len([archivo for archivo in archivos if archivo['encriptado']])
+            total_no_encriptados = total_archivos - total_encriptados
+            
+            # Obtener los archivos más recientes (últimos 5)
+            archivos_recientes = sorted(archivos, key=lambda x: x['fecha_subida'], reverse=True)[:5]
+            
+            return render_template('panel_user.html', 
+                                 username=user['username'], 
+                                 total_archivos=total_archivos,
+                                 total_encriptados=total_encriptados,
+                                 total_no_encriptados=total_no_encriptados,
+                                 archivos_recientes=archivos_recientes)
+    return redirect(url_for('login'))
+
+
+# Ruta para cerrar sesión
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('Sesión cerrada correctamente', 'success')
+    return redirect(url_for('home'))
+
+# Ruta para la página principal
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+
+
+# Función para convertir tamaño de bytes a formato legible
+def convertir_tamaño(tamaño_bytes):
+    """Convierte bytes a un formato legible (KB, MB, GB)"""
+    for unidad in ['B', 'KB', 'MB', 'GB']:
+        if tamaño_bytes < 1024:
+            return f"{tamaño_bytes:.2f} {unidad}"
+        tamaño_bytes /= 1024
+    return f"{tamaño_bytes:.2f} TB"
+
+# Función para verificar extensiones permitidas
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx'}
+
+# Ruta para subir archivos
+@app.route('/upload', methods=['POST'])
+@login_required
+def upload():
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'message': 'No se seleccionó archivo'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'Nombre de archivo vacío'}), 400
+    
+    if not allowed_file(file.filename):
+        return jsonify({'success': False, 'message': 'Tipo de archivo no permitido'}), 400
+    
+    try:
+        # Leer el archivo directamente a memoria
+        file_data = file.read()
+        filename = secure_filename(file.filename)
+        
+        # Verificar si el usuario quiere encriptar
+        encrypt_option = request.form.get('encrypt_file', 'no') == 'yes'
+        
+        # Encriptar si es necesario
+        if encrypt_option:
+            file_data = cipher_suite.encrypt(file_data)
+        
+        # Guardar en GridFS
+        file_id = fs.put(BytesIO(file_data), 
+                        filename=filename, 
+                        content_type=file.content_type)
+        
+        # Guardar metadatos en la colección archivos
+        mongo.db.archivos.insert_one({
+            'nombre': filename,
+            'file_id': file_id,
+            'fecha_subida': datetime.now(),
+            'tamaño': len(file_data),
+            'encriptado': encrypt_option,
+            'usuario': current_user.username,
+            'content_type': file.content_type
+        })
+        
+        return jsonify({'success': True, 'message': 'Archivo subido correctamente'})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error al subir archivo: {str(e)}'}), 500
+
+# Ruta para ver archivos
+@app.route('/view/<file_id>')
+@login_required
+def view_file(file_id):
+    try:
+        # Verificar permisos y obtener metadatos
+        archivo = mongo.db.archivos.find_one({
+            '_id': ObjectId(file_id),
+            'usuario': current_user.username
+        })
+        
+        if not archivo:
+            abort(404, description="Archivo no encontrado o no tienes permisos")
+        
+        # Obtener archivo de GridFS
+        grid_file = fs.get(archivo['file_id'])
+        file_data = grid_file.read()
+        
+        # Desencriptar si es necesario
+        if archivo['encriptado']:
+            file_data = cipher_suite.decrypt(file_data)
+        
+        return send_file(
+            BytesIO(file_data),
+            mimetype=archivo.get('content_type', 'application/octet-stream'),
+            as_attachment=False
+        )
+    
+    except Exception as e:
+        app.logger.error(f"Error al ver archivo {file_id}: {str(e)}")
+        abort(404, description="Error al procesar el archivo")
+
+# Ruta para descargar archivos
+@app.route('/download/<file_id>')
+@login_required
+def download_file(file_id):
+    try:
+        # Verificar permisos y obtener metadatos
+        archivo = mongo.db.archivos.find_one({
+            '_id': ObjectId(file_id),
+            'usuario': current_user.username
+        })
+        
+        if not archivo:
+            abort(404, description="Archivo no encontrado o no tienes permisos")
+        
+        # Obtener archivo de GridFS
+        grid_file = fs.get(archivo['file_id'])
+        file_data = grid_file.read()
+        
+        # Desencriptar si es necesario
+        if archivo['encriptado']:
+            file_data = cipher_suite.decrypt(file_data)
+        
+        return send_file(
+            BytesIO(file_data),
+            mimetype=archivo.get('content_type', 'application/octet-stream'),
+            as_attachment=True,
+            download_name=archivo['nombre']
+        )
+    
+    except Exception as e:
+        app.logger.error(f"Error al descargar archivo {file_id}: {str(e)}")
+        abort(404, description="Error al descargar el archivo")
+
+# Ruta para encriptar/desencriptar
+@app.route('/toggle_encrypt/<file_id>', methods=['POST'])
+@login_required
+def toggle_encrypt(file_id):
+    try:
+        # Verificar permisos y obtener metadatos
+        archivo = mongo.db.archivos.find_one({
+            '_id': ObjectId(file_id),
+            'usuario': current_user.username
+        })
+        
+        if not archivo:
+            return jsonify({'success': False, 'message': 'Archivo no encontrado'}), 404
+        
+        # Obtener archivo de GridFS
+        grid_file = fs.get(archivo['file_id'])
+        file_data = grid_file.read()
+        
+        if archivo['encriptado']:
+            # Desencriptar
+            file_data = cipher_suite.decrypt(file_data)
+            new_status = False
+            message = 'Archivo desencriptado correctamente'
+        else:
+            # Encriptar
+            file_data = cipher_suite.encrypt(file_data)
+            new_status = True
+            message = 'Archivo encriptado correctamente'
+        
+        # Eliminar el archivo viejo de GridFS
+        fs.delete(archivo['file_id'])
+        
+        # Subir el nuevo archivo (encriptado/desencriptado)
+        new_file_id = fs.put(BytesIO(file_data), 
+                          filename=archivo['nombre'],
+                          content_type=archivo['content_type'])
+        
+        # Actualizar metadatos
+        mongo.db.archivos.update_one(
+            {'_id': ObjectId(file_id)},
+            {'$set': {
+                'file_id': new_file_id,
+                'encriptado': new_status,
+                'tamaño': len(file_data)
+            }}
+        )
+        
+        return jsonify({
+            'success': True, 
+            'message': message, 
+            'encriptado': new_status
+        })
+    
+    except Exception as e:
+        app.logger.error(f"Error al cambiar encriptación {file_id}: {str(e)}")
+        return jsonify({
+            'success': False, 
+            'message': f'Error al procesar archivo: {str(e)}'
+        }), 500
+
+# Ruta para mostrar archivos del usuario
+@app.route('/archive')
+@login_required
+def archive():
+    try:
+        archivos = list(mongo.db.archivos.find({'usuario': current_user.username}))
+        return render_template(
+            'archive.html',
+            archivos=archivos,
+            username=current_user.username,
+            user_role=current_user.role,
+            convertir_tamaño=convertir_tamaño
+        )
+    except Exception as e:
+        app.logger.error(f"Error al cargar archivos: {str(e)}")
+        flash('Error al cargar los archivos', 'error')
+        return redirect(url_for('panel_user'))
+    
+    
+@app.route('/archive')
+@login_required
+def archive():
+    if current_user.is_authenticated:
+        user = mongo.db.usuarios.find_one({'username': current_user.username})
+        if user:
+            archivos = list(mongo.db.archivos.find({'usuario': current_user.username}))
+            return render_template('archive.html', 
+                                 archivos=archivos, 
+                                 convertir_tamaño=convertir_tamaño,
+                                 username=user['username'],  # Añadido
+                                 user_role=user.get('role', 'Usuario'))  # Añadido
+    return redirect(url_for('login'))
+
+
+
+if __name__ == '__main__':
+    # Crear carpetas necesarias
+    if not os.path.exists('uploads'):
+        os.makedirs('uploads')
+    if not os.path.exists('reports'):
+        os.makedirs('reports')
+    app.run(debug=True)
+
+
+
+# Función para limpiar nombres de archivo
+def limpiar_nombre_archivo(texto):
+    return re.sub(r'[<>:"/\\|?*]', '', texto)
+
+# Reportes
+@app.route('/generate_report')
+def generate_report():
+    def limpiar_nombre_archivo(texto):
+        return re.sub(r'[<>:"/\\|?*]', '', texto)
+    encuestas = list(mongo.db.encuestas.find())
+    if not encuestas:
+        flash("No hay encuestas registradas.", "warning")
+        return ""
+    pdf_path = os.path.join('reports', 'reporte_encuestas.pdf')
+    c = canvas.Canvas(pdf_path, pagesize=letter)
+    # 📌 Agregar encabezado
+    c.setFont("Helvetica-Bold", 18)
+    c.drawString(200, 750, "Reporte de Encuestas")
+    c.setFont("Helvetica", 12)
+    y_pos = 720  # Posición inicial en la hoja
+    respuestas_agrupadas = {}  # Para respuestas cerradas
+    respuestas_abiertas = {}   # Para respuestas abiertas
+    # 🔍 Organizar respuestas por tipo
+    for encuesta in encuestas:
+        for pregunta in encuesta.get('preguntas', []):
+            texto = pregunta["texto"]
+            tipo = pregunta['tipo']
+            respuesta = pregunta.get('respuesta', None)
+            if respuesta is None:
+                continue
+            if tipo in ['escala', 'opcion', 'numerico']:
+                if texto not in respuestas_agrupadas:
+                    respuestas_agrupadas[texto] = []
+                respuestas_agrupadas[texto].append(respuesta)
+            elif tipo == 'abierta':
+                if texto not in respuestas_abiertas:
+                    respuestas_abiertas[texto] = []
+                respuestas_abiertas[texto].append(respuesta)
+    # 📊 Generar reportes
+    for idx, (texto, respuestas) in enumerate(respuestas_agrupadas.items(), 1):
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(50, y_pos, f"{idx}. {texto}")
+        y_pos -= 20
+        conteo_respuestas = Counter(respuestas)
+        opciones = list(conteo_respuestas.keys())
+        valores = list(conteo_respuestas.values())
+        fig, ax = plt.subplots(figsize=(6, 4))
+        if texto.lower() == "¿recomendarías nuestro servicio?":
+            ax.pie(valores, labels=opciones, autopct='%1.1f%%', colors=['green', 'orange'])
+            ax.set_title(texto)
+        elif texto.lower() == "¿cuánto tiempo esperaste para ser atendido? (en minutos)":
+            ax.barh(opciones, valores, color='skyblue')
+            ax.set_xlabel("Tiempo en minutos")
+            ax.set_ylabel("Cantidad de respuestas")
+            ax.set_xticks(range(0, max(map(int, opciones)) + 5, 5))
+            ax.set_title(texto)
+        elif texto.lower() == "¿qué tan fácil fue agendar una cita? (1 = muy difícil, 10 = muy fácil)":
+            ax.scatter(opciones, valores, color='blue')
+            ax.set_xlabel("Facilidad de agendar cita")
+            ax.set_ylabel("Cantidad de respuestas")
+            ax.set_title(texto)
+        else:
+            ax.bar(opciones, valores, color='skyblue')
+            ax.set_ylabel('Cantidad de respuestas')
+            ax.set_title(texto)
+            ax.set_xticks(range(len(opciones)))
+            ax.set_xticklabels(opciones, rotation=45)
+        # Guardar imagen
+        nombre_archivo = limpiar_nombre_archivo(texto)
+        img_path = os.path.join("reports", f"grafico_{nombre_archivo}.png")
+        plt.savefig(img_path)
+        plt.close(fig)
+        # Insertar imagen en PDF
+        c.drawImage(img_path, 50, y_pos - 130, width=180, height=120)
+        os.remove(img_path)  
+        y_pos -= 150
+        if y_pos < 100:
+            c.showPage()
+            y_pos = 750
+    # 📌 Respuestas abiertas
+    for idx, (texto, respuestas) in enumerate(respuestas_abiertas.items(), len(respuestas_agrupadas) + 1):
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(50, y_pos, f"{idx}. {texto}")
+        y_pos -= 20
+        c.setFont("Helvetica", 12)
+        for i, respuesta in enumerate(respuestas, 1):
+            c.drawString(70, y_pos, f"{i}: {respuesta}")
+            y_pos -= 15
+        y_pos -= 20
+        if y_pos < 100:
+            c.showPage()
+            y_pos = 750
+    c.save()
+    flash('Reporte generado correctamente', 'success')
+    return send_from_directory('reports', 'reporte_encuestas.pdf', as_attachment=True)
+
+# Generar reporte en PowerPoint
+def generate_pptx_report():
+    encuestas = list(mongo.db.encuestas.find())
+    if not encuestas:
+        flash("No hay encuestas registradas.", "warning")
+        return ""
+    prs = Presentation()
+    slide_layout = prs.slide_layouts[5]  # Diseño en blanco
+    # Portada
+    slide = prs.slides.add_slide(slide_layout)
+    title = slide.shapes.title
+    title.text = "Reporte de Encuestas"
+    respuestas_agrupadas = {}
+    respuestas_abiertas = {}
+    for encuesta in encuestas:
+        for pregunta in encuesta.get('preguntas', []):
+            texto = pregunta["texto"]
+            tipo = pregunta['tipo']
+            respuesta = pregunta.get('respuesta', None)
+            if respuesta is None:
+                continue
+            if tipo in ['escala', 'opcion', 'numerico']:
+                if texto not in respuestas_agrupadas:
+                    respuestas_agrupadas[texto] = []
+                respuestas_agrupadas[texto].append(respuesta)
+            elif tipo == 'abierta':
+                if texto not in respuestas_abiertas:
+                    respuestas_abiertas[texto] = []
+                respuestas_abiertas[texto].append(respuesta)
+    for idx, (texto, respuestas) in enumerate(respuestas_agrupadas.items(), 1):
+        slide = prs.slides.add_slide(slide_layout)
+        title = slide.shapes.title
+        title.text = texto
+        conteo_respuestas = Counter(respuestas)
+        opciones = list(conteo_respuestas.keys())
+        valores = list(conteo_respuestas.values())
+        fig, ax = plt.subplots(figsize=(6, 4))
+        if texto.lower() == "¿recomendarías nuestro servicio?":
+            ax.pie(valores, labels=opciones, autopct='%1.1f%%', colors=['green', 'orange'])
+            ax.set_title(texto)
+        else:
+            ax.bar(opciones, valores, color='skyblue')
+            ax.set_ylabel('Cantidad de respuestas')
+            ax.set_title(texto)
+            ax.set_xticks(range(len(opciones)))
+            ax.set_xticklabels(opciones, rotation=45)
+        img_path = os.path.join("reports", f"grafico_{idx}.png")
+        plt.savefig(img_path)
+        plt.close(fig)
+        left = Inches(1)
+        top = Inches(1.5)
+        slide.shapes.add_picture(img_path, left, top, width=Inches(5), height=Inches(3))
+        os.remove(img_path)
+    pptx_path = os.path.join('reports', 'reporte_encuestas.pptx')
+    prs.save(pptx_path)
+    flash('Reporte en PowerPoint generado correctamente', 'success')
+    return send_from_directory('reports', 'reporte_encuestas.pptx', as_attachment=True)
+
+# Ruta para descargar el reporte en PowerPoint
+@app.route('/generate_pptx_report')
+def generate_pptx_report_route():
+    return generate_pptx_report()
+
+# Libreria para generar un reporte en Excel
+@app.route('/generate_xls_report')
+def generate_xls_report():
+    # Crear la carpeta 'reports' si no existe
+    if not os.path.exists('reports'):
+        os.makedirs('reports')
+    def limpiar_nombre_archivo(texto):
+        texto_limpio = re.sub(r'[<>:"/\\|?¿¡*]', '', texto)
+        texto_limpio = texto_limpio.replace(' ', '_')
+        texto_limpio = texto_limpio.replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')
+        return texto_limpio
+    encuestas = list(mongo.db.encuestas.find())
+    if not encuestas:
+        flash("No hay encuestas registradas.", "warning")
+        return ""
+    # Crear un nuevo libro de Excel y seleccionar la hoja activa
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Reporte de Encuestas"
+    # Agregar encabezado
+    ws.append(["Reporte de Encuestas"])
+    ws.merge_cells('A1:C1')
+    ws['A1'].font = Font(size=16, bold=True)
+    # Organizar respuestas por tipo
+    respuestas_agrupadas = {}
+    respuestas_abiertas = {}
+    imagenes_temporales = []  # Lista para guardar las rutas de las imágenes temporales
+    for encuesta in encuestas:
+        for pregunta in encuesta.get('preguntas', []):
+            texto = pregunta["texto"]
+            tipo = pregunta['tipo']
+            respuesta = pregunta.get('respuesta', None)
+            if respuesta is None:
+                continue
+            if tipo in ['escala', 'opcion', 'numerico']:
+                if texto not in respuestas_agrupadas:
+                    respuestas_agrupadas[texto] = []
+                respuestas_agrupadas[texto].append(respuesta)
+            elif tipo == 'abierta':
+                if texto not in respuestas_abiertas:
+                    respuestas_abiertas[texto] = []
+                respuestas_abiertas[texto].append(respuesta)
+    try:
+        # Agregar gráficos para preguntas cerradas
+        row_index = 3
+        for texto, respuestas in respuestas_agrupadas.items():
+            ws.append([texto])
+            ws.merge_cells(f'A{row_index}:C{row_index}')
+            ws[f'A{row_index}'].font = Font(size=14, bold=True)
+            row_index += 1
+            # Generar el gráfico
+            conteo_respuestas = Counter(respuestas)
+            opciones = list(conteo_respuestas.keys())
+            valores = list(conteo_respuestas.values())
+            fig, ax = plt.subplots(figsize=(6, 4))
+            if texto.lower() == "¿recomendarías nuestro servicio?":
+                ax.pie(valores, labels=opciones, autopct='%1.1f%%', colors=['green', 'orange'])
+                ax.set_title(texto)
+            else:
+                ax.bar(opciones, valores, color='skyblue')
+                ax.set_ylabel('Cantidad de respuestas')
+                ax.set_title(texto)
+                ax.set_xticks(range(len(opciones)))
+                ax.set_xticklabels(opciones, rotation=45)
+            # Guardar el gráfico en un archivo temporal
+            nombre_archivo = limpiar_nombre_archivo(texto)
+            img_path = os.path.join("reports", f"grafico_{nombre_archivo}.png")
+            plt.savefig(img_path, bbox_inches='tight')
+            plt.close(fig)
+            # Agregar la ruta de la imagen a la lista de imágenes temporales
+            imagenes_temporales.append(img_path)
+            # Insertar el gráfico en el Excel
+            img = Image(img_path)
+            ws.add_image(img, f'A{row_index}')
+            row_index += 15
+        # Agregar preguntas abiertas
+        ws.append(["Preguntas Abiertas"])
+        ws.merge_cells(f'A{row_index}:C{row_index}')
+        ws[f'A{row_index}'].font = Font(size=14, bold=True)
+        row_index += 1
+        for texto, respuestas in respuestas_abiertas.items():
+            ws.append([texto])
+            ws.merge_cells(f'A{row_index}:C{row_index}')
+            ws[f'A{row_index}'].font = Font(size=12, bold=True)
+            row_index += 1
+            for respuesta in respuestas:
+                ws.append(["", respuesta])
+                row_index += 1
+        # Guardar el archivo Excel
+        xls_path = os.path.join('reports', 'reporte_encuestas.xlsx')
+        wb.save(xls_path)
+        # Eliminar las imágenes temporales después de guardar el Excel
+        for img_path in imagenes_temporales:
+            if os.path.exists(img_path):
+                os.remove(img_path)
+        flash('Reporte en Excel generado correctamente', 'success')
+        return send_from_directory('reports', 'reporte_encuestas.xlsx', as_attachment=True)
+    except Exception as e:
+        # Si ocurre un error, asegurarse de limpiar las imágenes temporales
+        for img_path in imagenes_temporales:
+            if os.path.exists(img_path):
+                os.remove(img_path)
+        flash(f'Error al generar el reporte: {str(e)}', 'error')
+        return ""
+
+# Ruta para la página de archivos
+@app.route('/archive')
+def archive():
+    return render_template('archive.html')
+
+if __name__ == '__main__':
+    # Crear carpetas necesarias
+    if not os.path.exists('uploads'):
+        os.makedirs('uploads')
+    if not os.path.exists('reports'):
+        os.makedirs('reports')
+    app.run(debug=True)
+
+    login_manager = LoginManager()
+login_manager.init_app(app)
+
+class User(UserMixin):
+    def __init__(self, user_id, username):
+        self.id = user_id
+        self.username = username
+
+@login_manager.user_loader
+def load_user(user_id):
+    user = mongo.db.usuarios.find_one({'_id': user_id})
+    if user:
+        return User(user['_id'], user['username'])
+    return None
+

@@ -1,0 +1,122 @@
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script>
+        // JavaScript para manejar la apertura y cierre del menú
+        document.getElementById('menuBtn').addEventListener('click', function() {
+            const menu = document.getElementById('menu');
+            menu.classList.toggle('open');
+            const menuTexts = document.querySelectorAll('.menuText');
+            menuTexts.forEach(text => text.classList.toggle('open2'));
+        });
+
+
+
+		document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("taskModal");
+    const addTaskButton = document.querySelector(".add-task");
+    const closeModalButton = document.querySelector(".modal__close");
+
+    // Función para abrir el modal
+    function openModal() {
+        modal.classList.add("show");
+    }
+
+    // Función para cerrar el modal
+    function closeModal() {
+        modal.classList.remove("show");
+    }
+
+    // Evento para abrir el modal al hacer clic en "Subir Archivo"
+    addTaskButton.addEventListener("click", openModal);
+    
+    // Evento para cerrar el modal al hacer clic en el botón de cerrar
+    closeModalButton.addEventListener("click", closeModal);
+    
+    // Cerrar el modal si el usuario hace clic fuera del contenido
+    window.addEventListener("click", function (event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+});
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("taskModal");
+    const addTaskButton = document.querySelector(".add-task");
+    const closeModalButton = document.querySelector(".modal__close");
+    const uploadForm = document.getElementById("uploadForm");
+
+    // Función para abrir el modal
+    function openModal() {
+        modal.classList.add("show");
+    }
+
+    // Función para cerrar el modal
+    function closeModal() {
+        modal.classList.remove("show");
+    }
+
+    // Evento para abrir el modal al hacer clic en "Subir Archivo"
+    addTaskButton.addEventListener("click", openModal);
+    
+    // Evento para cerrar el modal al hacer clic en el botón de cerrar
+    closeModalButton.addEventListener("click", closeModal);
+    
+    // Cerrar el modal si el usuario hace clic fuera del contenido
+    window.addEventListener("click", function (event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    // Evento para manejar la subida de archivos
+    uploadForm.addEventListener("submit", function (event) {
+        event.preventDefault(); // Evitar el envío tradicional del formulario
+
+        const formData = new FormData(uploadForm);
+
+        fetch(uploadForm.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showConfirmation('Archivo subido correctamente 🎉');
+                closeModal();
+                // Recargar la página o actualizar la lista de archivos
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            } else {
+                showConfirmation('Error al subir el archivo 😢');
+            }
+        })
+        .catch(error => {
+            showConfirmation('Error al subir el archivo 😢');
+        });
+    });
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    var dropdowns = document.querySelectorAll(".dropdown-toggle");
+    dropdowns.forEach(function (dropdown) {
+        dropdown.addEventListener("click", function () {
+            var dropdownMenu = this.nextElementSibling;
+            dropdownMenu.classList.toggle("show");
+        });
+    });
+
+    // Cerrar el dropdown si se hace clic fuera de él
+    window.addEventListener("click", function (event) {
+        if (!event.target.matches('.dropdown-toggle')) {
+            var dropdowns = document.querySelectorAll(".dropdown-menu");
+            dropdowns.forEach(function (dropdownMenu) {
+                if (dropdownMenu.classList.contains("show")) {
+                    dropdownMenu.classList.remove("show");
+                }
+            });
+        }
+    });
+});
+    </script>

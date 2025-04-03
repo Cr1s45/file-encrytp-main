@@ -1,0 +1,561 @@
+        /* Google Fonts - Poppins & Turret Road */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Turret+Road:wght@400;500;700;800&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-padding-top: 2rem;
+            list-style: none;
+            text-decoration: none;
+            scroll-behavior: smooth;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        :root {
+            --main-color: #eca6ff;
+            --second-color: #081B54;
+        }
+
+        section {
+            padding: 50px 10%;
+        }
+
+        img {
+            width: 100%;
+        }
+
+        *::selection {
+            color: #FFF;
+            background: var(--main-color);
+        }
+
+        header {
+            position: fixed;
+            width: 100%;
+            top: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 10%;
+            transition: .2s;
+        }
+
+        header.active {
+            background: var(--second-color);
+            box-shadow: 0 0 4px rgb(14 55 54 / 15%);
+        }
+
+        header.active .logo,
+        header.active .navbar a {
+            color: #FFF;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #000000;
+        }
+
+        .logo img {
+            width: 35px;
+            margin-right: 10px;
+        }
+
+        .navbar {
+            display: flex;
+        }
+
+        .navbar a {
+            font-size: 1rem;
+            padding: 10px 20px;
+            color: #000000;
+            font-weight: 500;
+        }
+
+        .navbar a:hover {
+            background: var(--main-color);
+            color: #FFF;
+            border-radius: 4px;
+        }
+
+        #menu-icon {
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 10000;
+            display: none;
+        }
+
+        /* Home Section */
+        .home {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            position: relative;
+            gap: 1rem;
+        }
+
+        .home::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://img.freepik.com/premium-vector/media-files-outline-icons-white-background-modern-web-seamless-pattern-design-different-web-signs-pattern-audio-video-document-files-symbols-isolated_71609-2390.jpg') no-repeat center;
+            background-size: cover;
+            opacity: 0.2;
+            /* Ajusta la transparencia (0 = invisible, 1 = sólido) */
+            z-index: -1;
+            /* Coloca la imagen detrás del contenido */
+        }
+
+
+        .home-text {
+            flex: 1 1 17rem;
+        }
+
+        .home-text span {
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--main-color);
+        }
+
+        .home-text h1 {
+            font-size: 4rem;
+            color: var(--second-color);
+        }
+
+        .home-text p {
+            margin: 0.5rem 0 1.4rem;
+        }
+
+        .home-img {
+            flex: 1 1 17rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: 2px solid var(--main-color);
+            border-radius: 40px;
+            color: var(--main-color);
+            font-weight: 500;
+            transition: .3s;
+        }
+
+        .btn:hover {
+            letter-spacing: 2px;
+            color: #FFF;
+            background: var(--main-color);
+        }
+
+        /* About Section */
+
+        .about {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            background: url('https://img.freepik.com/foto-gratis/fondo-abstracto-azul-degradado-estudio-azul-oscuro-liso-vineta-negra_1258-67810.jpg') no-repeat center;
+            background-size: cover;
+
+            z-index: -1;
+            /* Coloca la imagen detrás del contenido */
+        }
+
+        .about h1 {
+            font-size: 2.5rem;
+            color: #FFF;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+        }
+
+        .about-container {
+            background: #FFF;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            border-radius: 10px;
+            border-top: 6px solid var(--main-color);
+            padding: 20px;
+            gap: 2rem;
+        }
+
+        .box-img {
+            width: 200px;
+            height: 200px;
+        }
+
+        .box-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+        }
+
+        .about-box {
+            flex: 1 1 8rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .about-box h2 {
+            font-size: 1.2rem;
+            color: var(--main-color);
+            letter-spacing: 1px;
+        }
+
+        .about-box h3 {
+            font-size: 1rem;
+            color: var(--second-color);
+            font-weight: 500;
+            margin: 0 0 0.5rem;
+        }
+
+        /* funtion Section */
+
+        .heading {
+            text-align: center;
+        }
+
+        .heading h2 {
+            font-size: 2rem;
+            color: var(--second-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .funtion-container,
+        .customer-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .funtion-box {
+            position: relative;
+            flex: 1 1 17rem;
+            box-shadow: 0 4px 4px rgb(14 55 54 / 15%);
+            border-radius: .5rem;
+            height: auto;
+        }
+
+        .funtion-box h2 {
+            font-size: 1.2rem;
+            color: var(--main-color);
+            letter-spacing: 1px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .funtion-box h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--second-color);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .funtion-box .bxs-cart-add {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            font-size: 20px;
+            background-color: var(--main-color);
+            border-radius: 4px 0 0 4px;
+            color: #FFF;
+            padding: 10px;
+            transition: .3s;
+            cursor: pointer;
+        }
+
+        .funtion-box .bxs-cart-add:hover {
+            background: var(--second-color);
+        }
+
+        .funtion-img {
+            width: 100%;
+            height: 300px;
+            border-radius: .5rem;
+            overflow: hidden;
+        }
+
+        .funtionp-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        .funtion-img img:hover {
+            transform: scale(1.1);
+            transition: .5s;
+        }
+
+        /* Customer Section */
+
+        .customer-container .box {
+            flex: 1 1 16rem;
+            text-align: center;
+            box-shadow: 0 4px 4px rgb(14 55 54 / 15%);
+            padding: 20px;
+            border-radius: .5rem;
+        }
+
+        .box img {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--second-color);
+        }
+
+        .box .bx {
+            color: var(--main-color);
+            margin-top: 0.5rem;
+        }
+
+        .box p {
+            margin: 0.5rem 0 1rem;
+        }
+
+        .box h2 {
+            font-size: 1.2rem;
+            color: var(--main-color);
+            letter-spacing: 1px;
+        }
+
+        /* Contact Section */
+
+        .contact-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .contact-info {
+            flex: 1 1 20rem;
+        }
+
+        .contact-info h2 {
+            font-size: 1.7rem;
+            color: var(--second-color);
+        }
+
+        .contact-info p {
+            margin: 0.5rem 0 1rem;
+            text-align: justify;
+        }
+
+        .contact-form {
+            flex: 1 1 20rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .contact-form form {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        form input,
+        textarea {
+            width: 100%;
+            padding: 17px;
+            border-radius: .5rem;
+            outline: none;
+            margin-bottom: 1rem;
+            border: 2px solid var(--main-color);
+            box-shadow: 0 4px 4px 2px rgb(14 55 54 / 15%);
+        }
+
+        form input::placeholder,
+        textarea::placeholder {
+            color: var(--main-color);
+        }
+
+        form textarea {
+            height: 150px;
+            resize: none;
+        }
+
+        form .btn {
+            max-width: 150px;
+            background: var(--main-color);
+            color: #FFF;
+            text-transform: uppercase;
+            font-weight: bold;
+            border: none;
+            transition: .3s;
+            margin: auto;
+            cursor: pointer;
+        }
+
+        form .btn:hover {
+            background: var(--second-color);
+        }
+
+        .address {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .address i {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 20px;
+        }
+
+        .address span {
+            font-size: 1rem;
+            margin-left: 1rem;
+        }
+
+        .social {
+            margin-top: 1rem;
+        }
+
+        .social a {
+            font-size: 24px;
+            color: var(--main-color);
+            margin-right: 1rem;
+            transition: .3s;
+        }
+
+        .social a:hover {
+            color: var(--second-color);
+        }
+
+        .copyright {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .copyright span {
+            font-family: 'Turret Road', sans-serif;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1100px) {
+            .home-text h1 {
+                font-size: 3rem;
+            }
+        }
+
+        @media (max-width: 991px) {
+            header {
+                padding: 18px 4%;
+            }
+
+            header .navbar {
+                position: absolute;
+                top: -500px;
+                left: 0;
+                right: 0;
+                display: flex;
+                flex-direction: column;
+                background: var(--second-color);
+                box-shadow: 0 4px 4px rgb(14 55 54 / 15%);
+                transition: .2s ease;
+                text-align: center;
+            }
+
+            .navbar a {
+                padding: 1.5rem;
+                display: block;
+                color: #FFF;
+            }
+
+            .navbar.active {
+                top: 100%;
+            }
+
+            section {
+                padding: 50px 4%;
+            }
+
+            #menu-icon {
+                display: initial;
+            }
+
+            header.active #menu-icon {
+                color: #FFF;
+            }
+
+            .home-text h1 {
+                font-size: 2.4rem;
+            }
+
+            .home-text p {
+                font-size: .9rem;
+            }
+
+            .about h1 {
+                font-size: 2rem;
+            }
+
+            .heading h2 {
+                font-size: 1.6rem;
+            }
+
+            .contact-info h2 {
+                font-size: 1.6rem;
+            }
+
+        }
+
+        /* Estilos para el menú de usuario */
+        .user-menu {
+            position: relative;
+        }
+
+        .user-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            font-size: 24px;
+            color: #fff;
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: #fff;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .dropdown li {
+            padding: 10px;
+            text-align: center;
+        }
+
+        .dropdown li a {
+            color: #333;
+            text-decoration: none;
+            display: block;
+        }
+
+        .user-menu:hover .dropdown {
+            display: block;
+        }
